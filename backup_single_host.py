@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python26
 
 # (c) 2012, Ovais Tariq <ovaistariq@gmail.com>
 #

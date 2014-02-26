@@ -39,9 +39,9 @@ class Threaded_host_backup(threading.Thread):
     def run(self):
         host = self.queue.get()
         config_helper = Config_helper(host=host)
-        backup_root = os.path.join(config_helper.get_backup_dir(), host)
-        prepare_dir = os.path.join(backup_root, "prepare")
-	archive_dir = os.path.join(backup_root, "ready")
+        backup_root = config_helper.get_backup_dir()
+        prepare_dir = config_helper.get_backup_dir()
+	archive_dir = config_helper.get_archive_dir()
 
 	prepare_error_dir = os.path.join(backup_root, "prepare_error")
 	if os.path.isdir(prepare_error_dir):

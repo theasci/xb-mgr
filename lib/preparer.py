@@ -39,9 +39,7 @@ class Preparer(object):
 
         config_helper = Config_helper(host=self._host)
 
-        self._backup_directory = os.path.join(
-                                    config_helper.get_backup_dir(), 
-                                    self._host)
+        self._backup_directory = config_helper.get_backup_dir()
         self._backup_full_directory = os.path.join(
                                     self._backup_directory, 
                                     "full")

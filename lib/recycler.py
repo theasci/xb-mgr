@@ -32,7 +32,7 @@ class Recycler(object):
 
 	self._threshold_date = datetime.now() - timedelta(days=self._retention_days)
 
-	self._backup_dir = os.path.join(config_helper.get_backup_dir(), self._host)
+	self._backup_dir = config_helper.get_backup_dir()
         self._backup_full_dir = os.path.join(self._backup_dir, "full")
         self._backup_inc_dir = os.path.join(self._backup_dir, "incremental")
 	self._archive_dir = os.path.join(self._backup_dir, "ready")

@@ -40,7 +40,7 @@ class Backup(object):
         self._remote_cmd = Async_remote_command(host=self._host,
                                                 command=self._remote_backup_cmd)
 
-        self._backup_directory = os.path.join(config_helper.get_backup_dir(), self._host)
+        self._backup_directory = config_helper.get_backup_dir()
         self._backup_full_directory = os.path.join(self._backup_directory, "full")
         self._backup_incremental_directory = os.path.join(self._backup_directory, "incremental")
 

@@ -34,9 +34,9 @@ class Host_backup():
 
     def run(self):
         config_helper = Config_helper(host=self.host)
-        backup_root = os.path.join(config_helper.get_backup_dir(), self.host)
-        prepare_dir = os.path.join(backup_root, "prepare")
-	archive_dir = os.path.join(backup_root, "ready")
+        backup_root = config_helper.get_backup_dir()
+        prepare_dir = config_helper.get_prepare_dir()
+	archive_dir = config_helper.get_archive_dir()
 
 	prepare_error_dir = os.path.join(backup_root, "prepare_error")
 	if os.path.isdir(prepare_error_dir):

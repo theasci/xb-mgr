@@ -18,6 +18,7 @@
 import ConfigParser
 import os
 import os.path
+from string import Template
 
 class Config_helper(object):
     CONFIG_PATH = '/usr/local/xb-mgr/conf/backup.conf'
@@ -44,7 +45,13 @@ class Config_helper(object):
 	return self.get_param_value(param_name='root_dir')
 
     def get_backup_dir(self):
-        return self.get_param_value(param_name='backup_dir')
+        return self.get_param_value_template(param_name='backup_dir')
+
+    def get_prepare_dir(self):
+        return self.get_param_value_template(param_name='prepare_dir')
+
+    def get_archive_dir(self):
+        return self.get_param_value_template(param_name='archive_dir')
 
     def get_backup_manager_host(self):
         return self.get_param_value(param_name='backup_manager_host')
@@ -88,3 +95,11 @@ class Config_helper(object):
                 param_value = self._config.get(section, param_name)
 
         return param_value
+
+    def get_param_value_template(self, param_name):
+	value = self.get_param_value(param_name)
+	if value == False:
+		return False
+
+	value_template = Template(value)
+	return value_template.safe_substitute({ 'host': self._host })

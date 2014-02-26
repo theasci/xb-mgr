@@ -27,7 +27,7 @@ class Async_remote_command(object):
         self._job_id = 0
         self._COMMAND_SUCCESS_OUTPUT = "SUCCESS"
 
-	config_helper = Config_helper(host=host)
+        config_helper = Config_helper(host=host)
         self._ssh_user = config_helper.get_ssh_user()
         self._private_key_file = config_helper.get_private_key_file()
 
@@ -67,58 +67,33 @@ class Async_remote_command(object):
 
         return True
 
-    def execute_command(self, command_args, max_run_seconds=86400):
+    def execute_command(self, command_args, max_run_seconds=86400, poll_seconds=30):
         ansible_cmd_args = "%s %s" % (self._command, command_args)
         runner_obj = ansible.runner.Runner(pattern=self._host, 
                                             module_name="command", 
                                             module_args=ansible_cmd_args, 
-                                            background=max_run_seconds,
                                             remote_user=self._ssh_user,
                                             private_key_file=self._private_key_file)
-        results = runner_obj.run()
-        if self.validate_host_connection(remote_cmd_result=results) == False:
-            print "Error connecting to", self._host
-            return False
+        results, poller = runner_obj.run_async(max_run_seconds)
+        poller.wait(max_run_seconds, poll_seconds)
+        if self.validate_host_connection(remote_cmd_result=poller.results) == False:
+            return {'error': True, 
+                    'error_msg': "Error connecting to %s" % self._host}
 
-        host_result = results['contacted'][self._host]
-        if host_result['started'] == 1:
-            self._job_id = host_result['ansible_job_id']
-            return True
-
-        return False
-
-    def poll_command_result(self, poll_seconds=10):
-        poller_obj = ansible.runner.Runner(pattern=self._host, 
-					    module_name="async_status", 
-					    module_args="jid="+self._job_id,
-                                            remote_user=self._ssh_user,
-                                            private_key_file=self._private_key_file)
-
-        while True:
-            results = poller_obj.run()
-
-            if self.validate_host_connection(remote_cmd_result=results) == False:
-                print "Error connecting to", self._host
-                return {'error': True, 
-                        'error_msg': "Error connecting to %s" % self._host}
-
-            host_result = results['contacted'][self._host]
-            
-            if 'finished' in host_result and host_result['finished'] == 1:
-                if 'failed' in host_result and host_result['failed'] == 1:
-                    return {'error': True, 'error_msg': host_result['msg']}
-                
-                if 'stderr' in host_result and host_result['stderr'] != '':
-                    return {'error': True, 'error_msg': host_result['stderr']}
-                
-                if host_result['stdout'] == self._COMMAND_SUCCESS_OUTPUT:
-                    return {'error': False, 'start_time': host_result['start'],
-                            'end_time': host_result['end'], 
-                            'duration': host_result['delta']}
-            
-                return {'error': True, 'error_msg': host_result['stdout']}
-
-            time.sleep(poll_seconds)
+        host_result = poller.results['contacted'][self._host]
+        
+        if 'failed' in host_result and host_result['failed'] == 1:
+            return {'error': True, 'error_msg': host_result['msg']}
+        
+        if 'stderr' in host_result and host_result['stderr'] != '':
+            return {'error': True, 'error_msg': host_result['stderr']}
+        
+        if host_result['stdout'] == self._COMMAND_SUCCESS_OUTPUT:
+            return {'error': False, 'start_time': host_result['start'],
+                    'end_time': host_result['end'], 
+                    'duration': host_result['delta']}
+    
+        return {'error': True, 'error_msg': host_result['stdout']}
        
     def validate_host_connection(self, remote_cmd_result):
         if (remote_cmd_result is None or self._host in remote_cmd_result['dark'] or

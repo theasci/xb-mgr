@@ -171,12 +171,7 @@ class Backup(object):
         return {'backup_type': Backup.BACKUP_TYPE_INC, 'backup_dir': backup_dir_name}
 
     def execute_remote_backup_cmd(self, backup_cmd_args):
-        if self._remote_cmd.execute_command(command_args=backup_cmd_args) == False:
-            self._log_helper.error_message("Error executing remote backup "
-					    "script on %s" % self._host)
-            return False
-
-        cmd_result = self._remote_cmd.poll_command_result()
+        cmd_result = self._remote_cmd.execute_command(command_args=backup_cmd_args)
 
         if cmd_result['error'] == False:
             self._log_helper.info_message("Backup FINISHED successfully [Duration: %s]" % cmd_result['duration'])

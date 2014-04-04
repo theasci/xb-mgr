@@ -18,6 +18,7 @@
 import os
 import time
 import ConfigParser
+from subprocess import Popen, PIPE
 from datetime import datetime
 from async_remote_command import Async_remote_command
 from config_helper import Config_helper
@@ -37,8 +38,6 @@ class Backup(object):
         self._full_backup_day = config_helper.get_full_backup_day()
 
         self._remote_backup_cmd = config_helper.get_remote_backup_cmd()
-        self._remote_cmd = Async_remote_command(host=self._host,
-                                                command=self._remote_backup_cmd)
 
         self._backup_directory = config_helper.get_backup_dir()
         self._backup_full_directory = os.path.join(self._backup_directory, "full")
@@ -53,8 +52,11 @@ class Backup(object):
         if not os.path.isdir(self._backup_incremental_directory):
             os.makedirs(self._backup_incremental_directory)
 
-        self._remote_cmd.setup_remote_command()
-            
+        if self._host != 'localhost':
+            self._remote_cmd = Async_remote_command(host=self._host,
+                                                    command=self._remote_backup_cmd)
+            self._remote_cmd.setup_remote_command()
+
     def is_full_backup_day(self):
         day_of_week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
         current_time = time.localtime()
@@ -117,11 +119,13 @@ class Backup(object):
 
         self._log_helper.info_message("Backup STARTED ...")
 
-        backup_cmd_args = "-H %s -f -d %s" % (self._backup_manager_host, backup_dir_name)
+        backup_cmd_args = "-f -d %s" % backup_dir_name
+        if self._backup_manager_host:
+            backup_cmd_args += " -H %s" % self._backup_manager_host
 
-        self._log_helper.info_message("Executing remote command %s %s" % (self._remote_backup_cmd, backup_cmd_args))
+        self._log_helper.info_message("Executing command %s %s" % (self._remote_backup_cmd, backup_cmd_args))
 
-        if self.execute_remote_backup_cmd(backup_cmd_args=backup_cmd_args) == False:
+        if self.execute_backup_cmd(backup_cmd_args=backup_cmd_args) == False:
             return False
 
         self._log_helper.info_message("Standardizing checkpoints file so it can be used for next run")
@@ -155,11 +159,13 @@ class Backup(object):
 
         self._log_helper.info_message("Backup STARTED from LSN %d ..." % last_lsn)
 
-        backup_cmd_args = "-H %s -i -l %d -d %s" % (self._backup_manager_host, last_lsn, backup_dir_name)
+        backup_cmd_args = "-i -l %d -d %s" % (last_lsn, backup_dir_name)
+        if self._backup_manager_host:
+            backup_cmd_args += " -H %s" % self._backup_manager_host
 
-        self._log_helper.info_message("Executing remote command %s %s" % (self._remote_backup_cmd, backup_cmd_args))
+        self._log_helper.info_message("Executing command %s %s" % (self._remote_backup_cmd, backup_cmd_args))
 
-        if self.execute_remote_backup_cmd(backup_cmd_args=backup_cmd_args) == False:
+        if self.execute_backup_cmd(backup_cmd_args=backup_cmd_args) == False:
             return False
 
         self._log_helper.info_message("Standardizing checkpoints file so it can be used for next run")
@@ -170,8 +176,11 @@ class Backup(object):
         self._log_helper.info_message("Backup COMPLETED")
         return {'backup_type': Backup.BACKUP_TYPE_INC, 'backup_dir': backup_dir_name}
 
-    def execute_remote_backup_cmd(self, backup_cmd_args):
-        cmd_result = self._remote_cmd.execute_command(command_args=backup_cmd_args)
+    def execute_backup_cmd(self, backup_cmd_args):
+        if self._host == 'localhost':
+	    cmd_result = self._execute_local_backup_cmd(backup_cmd_args)
+	else:
+	    cmd_result = self._remote_cmd.execute_command(command_args=backup_cmd_args)
 
         if cmd_result['error'] == False:
             self._log_helper.info_message("Backup FINISHED successfully [Duration: %s]" % cmd_result['duration'])
@@ -180,6 +189,25 @@ class Backup(object):
         self._log_helper.error_message("Backup FAILED")
         self._log_helper.error_message(cmd_result['error_msg'])
         return False
+
+    def _execute_local_backup_cmd(self, backup_cmd_args):
+	start = datetime.now()
+	cmd = "%s %s" % (self._remote_backup_cmd, backup_cmd_args)
+	try:
+	    p = Popen([self._remote_backup_cmd, backup_cmd_args], shell=True, stdout=PIPE, stderr=PIPE)
+	    (stdout, stderr) = p.communicate()
+	    cmd_result = {
+		'error': p.returncode != 0,
+		'error_msg': stdout + stderr,
+	    }
+	except OSError as e:
+	    cmd_result = {
+		'error': True,
+		'error_msg': str(e)
+	    }
+
+	cmd_result['duration'] = (datetime.now() - start).seconds
+	return cmd_result
 
     def get_last_lsn(self, backup_dir):
         config = ConfigParser.RawConfigParser()

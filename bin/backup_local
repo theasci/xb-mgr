@@ -60,56 +60,61 @@ function display_error_n_exit() {
 }
 
 function exit_on_ssh_error() {
-    if [[ -z $backup_manager_host ]]
-    then 
-        display_error_n_exit "Please provide the remote host to send the backup to" 
-    fi
-  
-    ssh -q $backup_manager_host "exit"
-    if [[ $? != 0 ]]
-    then 
-        display_error_n_exit "Could not SSH to $backup_manager_host" 
+    if [[ -n $backup_manager_host ]]
+    then
+        ssh -q $backup_manager_host "exit"
+        if [[ $? != 0 ]]
+        then
+            display_error_n_exit "Could not SSH to $backup_manager_host" 
+        fi
     fi
 }
 
 function exit_on_backup_dir_error() {
     if [[ -z $remote_backup_directory ]]
-    then 
+    then
         display_error_n_exit "Please provide the directory where backup will be copied to"
     fi
 
-    ssh -q $backup_manager_host "if [[ -d $remote_backup_directory ]]; then exit 0; else exit 1; fi"
-    if [[ $? != 0 ]]
-    then 
-        display_error_n_exit "Could not find the directory $remote_backup_directory on $backup_manager_host"
+    if [[ -n $backup_manager_host ]]
+    then
+        ssh -q $backup_manager_host "if [[ -d $remote_backup_directory ]]; then exit 0; else exit 1; fi"
+        if [[ $? != 0 ]]
+        then
+            display_error_n_exit "Could not find the directory $remote_backup_directory on $backup_manager_host"
+        fi
     fi
 }
 
 function do_full_backup() {
     backup_params="--defaults-extra-file=${xtrbackup_conf} --compress --stream=xbstream --tmpdir=${tmp_dir} --extra-lsndir=${tmp_dir} --slave-info ${tmp_dir}"
-    backup_file_name="${remote_backup_directory}/backup.xbstream"
-
-    local status=1
-    $backup_cmd $backup_params 2> $backup_log | ssh $backup_manager_host "cat - > $backup_file_name"
-    if [[ $(tail -1 $backup_log | grep -c 'innobackupex: completed OK!') == 1 ]]
-    then
-        scp ${tmp_dir}/xtrabackup_checkpoints $backup_manager_host:${remote_backup_directory}/
-        status=0
-    fi
-
-    return $status
+    return do_backup_execute $backup_params
 }
 
 function do_incremental_backup() {
     backup_params="--defaults-extra-file=${xtrbackup_conf} --incremental --incremental-lsn=${last_lsn} --compress --stream=xbstream --tmpdir=${tmp_dir} --extra-lsndir=${tmp_dir} --slave-info ${tmp_dir}"
-    backup_file_name="${remote_backup_directory}/backup.xbstream"
+    return do_backup_execute $backup_params
+}
 
+function do_backup_execute() {
+    backup_file_name="${remote_backup_directory}/backup.xbstream"
+    backup_params=$1
     local status=1
-    $backup_cmd $backup_params 2> $backup_log | ssh $backup_manager_host "cat - > $backup_file_name"
-    if [[ $(tail -1 $backup_log | grep -c 'innobackupex: completed OK!') == 1 ]]
+    if [[ -n $backup_manager_host ]]
     then
-        scp ${tmp_dir}/xtrabackup_checkpoints $backup_manager_host:${remote_backup_directory}/
-        status=0
+        $backup_cmd $backup_params 2> $backup_log | ssh $backup_manager_host "cat - > $backup_file_name"
+        if [[ $(tail -1 $backup_log | grep -c 'innobackupex: completed OK!') == 1 ]]
+        then
+            scp ${tmp_dir}/xtrabackup_checkpoints $backup_manager_host:${remote_backup_directory}/
+            status=0
+        fi
+    else
+        $backup_cmd $backup_params 2> $backup_log > $backup_file_name
+        if [[ $(tail -1 $backup_log | grep -c 'innobackupex: completed OK!') == 1 ]]
+        then
+            cp ${tmp_dir}/xtrabackup_checkpoints ${remote_backup_directory}/
+            status=0
+        fi
     fi
 
     return $status

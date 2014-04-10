@@ -88,12 +88,12 @@ function exit_on_backup_dir_error() {
 
 function do_full_backup() {
     backup_params="--defaults-extra-file=${xtrbackup_conf} --compress --stream=xbstream --tmpdir=${tmp_dir} --extra-lsndir=${tmp_dir} --slave-info ${tmp_dir}"
-    return do_backup_execute $backup_params
+    do_backup_execute "$backup_params"
 }
 
 function do_incremental_backup() {
     backup_params="--defaults-extra-file=${xtrbackup_conf} --incremental --incremental-lsn=${last_lsn} --compress --stream=xbstream --tmpdir=${tmp_dir} --extra-lsndir=${tmp_dir} --slave-info ${tmp_dir}"
-    return do_backup_execute $backup_params
+    do_backup_execute "$backup_params"
 }
 
 function do_backup_execute() {

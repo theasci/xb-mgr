@@ -24,7 +24,7 @@ remote_backup_directory=
 last_lsn=
 
 root_dir=$(cd $(dirname $0)/..; pwd)
-tmp_dir="/mnt/mysql/tmp"
+tmp_dir="/mnt/linode_backups/tmp"
 backup_log="${tmp_dir}/backup-$(date +%Y_%m_%d_%H_%M_%S).log"
 backup_cmd="/usr/bin/innobackupex"
 xtrbackup_conf=${root_dir}/conf/xtrabackup.conf

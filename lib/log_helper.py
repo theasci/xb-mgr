@@ -70,7 +70,7 @@ class Log_helper(object):
         self._logger.addHandler(log_file_handler)
 
 	# Add a handler for emailing messages
-	email_handler = Buffered_email_handler(host=self._host)
-        email_handler.setLevel(self._log_level)
-        email_handler.setFormatter(formatter)
-        self._logger.addHandler(email_handler)
+	#email_handler = Buffered_email_handler(host=self._host)
+        #email_handler.setLevel(self._log_level)
+        #email_handler.setFormatter(formatter)
+        #self._logger.addHandler(email_handler)

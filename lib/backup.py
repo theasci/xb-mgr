@@ -194,7 +194,7 @@ class Backup(object):
 	start = datetime.now()
 	cmd = "%s %s" % (self._remote_backup_cmd, backup_cmd_args)
 	try:
-	    p = Popen([self._remote_backup_cmd, backup_cmd_args], shell=True, stdout=PIPE, stderr=PIPE)
+	    p = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
 	    (stdout, stderr) = p.communicate()
 	    cmd_result = {
 		'error': p.returncode != 0,

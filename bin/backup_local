@@ -22,6 +22,7 @@ is_incremental_backup=
 backup_manager_host=
 remote_backup_directory=
 last_lsn=
+port=
 
 root_dir=$(cd $(dirname $0)/..; pwd)
 tmp_dir="/mnt/linode_backups/tmp"
@@ -36,7 +37,7 @@ touch $backup_log
 RETURN_MSG="SUCCESS"
 
 # Command line argument processing
-OPT_ARGS=":fid:H:l:"
+OPT_ARGS=":fid:H:l:p:"
 while getopts "$OPT_ARGS" opt
 do
     case $opt in
@@ -49,6 +50,8 @@ do
         H) backup_manager_host=$OPTARG
         ;;
         l) last_lsn=$OPTARG
+        ;;
+	p) port=$OPTARG
         ;;
     esac
 done
@@ -87,12 +90,12 @@ function exit_on_backup_dir_error() {
 }
 
 function do_full_backup() {
-    backup_params="--defaults-extra-file=${xtrbackup_conf} --compress --stream=xbstream --tmpdir=${tmp_dir} --extra-lsndir=${tmp_dir} --slave-info ${tmp_dir}"
+    backup_params="--port=${port} --defaults-extra-file=${xtrbackup_conf} --compress --stream=xbstream --tmpdir=${tmp_dir} --extra-lsndir=${tmp_dir} --slave-info ${tmp_dir}"
     do_backup_execute "$backup_params"
 }
 
 function do_incremental_backup() {
-    backup_params="--defaults-extra-file=${xtrbackup_conf} --incremental --incremental-lsn=${last_lsn} --compress --stream=xbstream --tmpdir=${tmp_dir} --extra-lsndir=${tmp_dir} --slave-info ${tmp_dir}"
+    backup_params="--port=${port} --defaults-extra-file=${xtrbackup_conf} --incremental --incremental-lsn=${last_lsn} --compress --stream=xbstream --tmpdir=${tmp_dir} --extra-lsndir=${tmp_dir} --slave-info ${tmp_dir}"
     do_backup_execute "$backup_params"
 }
 

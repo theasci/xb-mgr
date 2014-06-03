@@ -56,6 +56,9 @@ class Config_helper(object):
     def get_backup_manager_host(self):
         return self.get_param_value(param_name='backup_manager_host')
 
+    def get_port(self):
+        return self.get_param_value(param_name='port')
+
     def get_remote_backup_cmd(self):
         return self.get_param_value(param_name='remote_backup_cmd')
 

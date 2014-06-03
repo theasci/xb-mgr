@@ -35,6 +35,7 @@ class Backup(object):
         config_helper = Config_helper(host=self._host)
 
         self._backup_manager_host = config_helper.get_backup_manager_host()
+	self._port = config_helper.get_port()
         self._full_backup_day = config_helper.get_full_backup_day()
 
         self._remote_backup_cmd = config_helper.get_remote_backup_cmd()
@@ -119,7 +120,7 @@ class Backup(object):
 
         self._log_helper.info_message("Backup STARTED ...")
 
-        backup_cmd_args = "-f -d %s" % backup_dir_name
+        backup_cmd_args = "-f -d %s -p %s" % (backup_dir_name, self._port)
         if self._backup_manager_host:
             backup_cmd_args += " -H %s" % self._backup_manager_host
 
@@ -159,7 +160,7 @@ class Backup(object):
 
         self._log_helper.info_message("Backup STARTED from LSN %d ..." % last_lsn)
 
-        backup_cmd_args = "-i -l %d -d %s" % (last_lsn, backup_dir_name)
+        backup_cmd_args = "-i -l %d -d %s -p %s" % (last_lsn, backup_dir_name, self._port)
         if self._backup_manager_host:
             backup_cmd_args += " -H %s" % self._backup_manager_host
 

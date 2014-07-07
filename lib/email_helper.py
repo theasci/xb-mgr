@@ -19,7 +19,7 @@ import smtplib
 from email.mime.text import MIMEText
 
 class Email_helper(object):
-    SMTP_HOST = "localhost"
+    SMTP_HOST = "mail.the-jci.org"
     SENDER = "backup_manager@backup.com"
 
     def __init__(self):

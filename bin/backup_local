@@ -103,14 +103,14 @@ function do_backup_execute() {
     if [[ -n $backup_manager_host ]]
     then
         $backup_cmd $backup_params 2> $backup_log | ssh $backup_manager_host "cat - > $backup_file_name"
-        if [[ $(tail -1 $backup_log | grep -c 'innobackupex: completed OK!') == 1 ]]
+        if [[ $(tail -1 $backup_log | grep -c 'completed OK!') == 1 ]]
         then
             scp ${tmp_dir}/xtrabackup_checkpoints $backup_manager_host:${remote_backup_directory}/
             status=0
         fi
     else
         $backup_cmd $backup_params 2> $backup_log > $backup_file_name
-        if [[ $(tail -1 $backup_log | grep -c 'innobackupex: completed OK!') == 1 ]]
+        if [[ $(tail -1 $backup_log | grep -c 'completed OK!') == 1 ]]
         then
             cp ${tmp_dir}/xtrabackup_checkpoints ${remote_backup_directory}/
             status=0

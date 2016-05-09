@@ -20,7 +20,6 @@ import time
 import ConfigParser
 from subprocess import Popen, PIPE
 from datetime import datetime
-from async_remote_command import Async_remote_command
 from config_helper import Config_helper
 
 class Backup(object):
@@ -51,11 +50,6 @@ class Backup(object):
 
         if not os.path.isdir(self._backup_incremental_directory):
             os.makedirs(self._backup_incremental_directory)
-
-        if self._host != 'localhost':
-            self._remote_cmd = Async_remote_command(host=self._host,
-                                                    command=self._remote_backup_cmd)
-            self._remote_cmd.setup_remote_command()
 
     def is_full_backup_day(self):
         day_of_week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -177,10 +171,7 @@ class Backup(object):
         return {'backup_type': Backup.BACKUP_TYPE_INC, 'backup_dir': backup_dir_name}
 
     def execute_backup_cmd(self, backup_cmd_args):
-        if self._host == 'localhost':
-	    cmd_result = self._execute_local_backup_cmd(backup_cmd_args)
-	else:
-	    cmd_result = self._remote_cmd.execute_command(command_args=backup_cmd_args)
+        cmd_result = self._execute_local_backup_cmd(backup_cmd_args)
 
         if cmd_result['error'] == False:
             self._log_helper.info_message("Backup FINISHED successfully [Duration: %s]" % cmd_result['duration'])
